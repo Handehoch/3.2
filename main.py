@@ -1,11 +1,13 @@
 import csv
 import os
 import time
+from concurrent.futures import ThreadPoolExecutor
 
 from multiprocessing import Pool
 from line_profiler import LineProfiler
 
 profiler = LineProfiler()
+
 
 def get_filenames_from_dir(dir_name: str) -> list[str]:
 	return list(map(lambda x: f"./{dir_name}/" + x, list(os.walk(f".//{dir_name}"))[0][2]))
@@ -193,13 +195,12 @@ class InputConnect:
 		pools = []
 		for file in files:
 			dataset = DataSet(file, self.vacancy_name)
-			p = Pool(5)
-			result = p.apply_async(dataset.get_data)
+			with ThreadPoolExecutor(5) as executor:
+				result = executor.submit(dataset.get_data)
 			pools.append(result)
-		
 		multi = Multiprocessing(pools)
 		result = multi.get_united_dict()
-		DataSet.print_data(result[0], result[1], result[2], result[3], result[4], result[5])
+		dataset.print_data(result[0], result[1], result[2], result[3], result[4], result[5])
 
 
 class Multiprocessing:
@@ -214,14 +215,14 @@ class Multiprocessing:
 	
 	def get_united_dict(self) -> set:
 		"""
-			Возвращает результаты выполнения всех процессов
-			:return: Множество результатов
+		Возвращает результаты выполнения всех процессов
+		:return: Множество результатов
 		"""
-		answer = self.pools[0].get()
+		answer = self.pools[0].result()
 		for i in range(1, len(self.pools)):
 			for k in range(0, 4):
-				answer[k].update(self.pools[i].get()[k])
-		return self.pools[0].get()
+				answer[k].update(self.pools[i].result()[k])
+		return self.pools[0].result()
 
 
 if __name__ == '__main__':

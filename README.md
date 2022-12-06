@@ -3,3 +3,6 @@
 
 С мультипроцессингом
 ![img_2.png](img_2.png)
+
+ThreadPoolExecutor
+![img.png](img.png)
